@@ -1,19 +1,29 @@
+require("dotenv").config();
 const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
-const path = require("path");
 const fs = require("fs");
+const path = require("path");
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());
-app.use("/uploads", express.static("uploads"));
-app.use(express.static("uploads"));
+// ✅ Fix 1: Enable Full CORS Support
+app.use(
+  cors({
+    origin: "*", // Allow all domains (or specify allowed domains)
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"],
+  })
+);
+
+// ✅ Fix 2: Serve Static Files Properly
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// Middleware for JSON Parsing
 app.use(express.json());
 
-// Configure Multer for File Uploads
+// Set up Multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadPath = "uploads/";
@@ -29,26 +39,54 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// API Route for File Upload
+// 📤 Upload File API
 app.post("/upload", upload.single("file"), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: "No file uploaded." });
   }
-  res.json({ message: "File uploaded successfully!", file: req.file.filename });
+
+  const fileUrl = `${req.protocol}://${req.get("host")}/uploads/${
+    req.file.filename
+  }`;
+
+  console.log("File uploaded:", req.file.filename); // Debugging log
+
+  res.json({
+    message: "File uploaded successfully!",
+    fileUrl: fileUrl,
+  });
 });
 
-// API Route to Fetch Uploaded Files
+// 📁 Fetch List of Files API
 app.get("/files", (req, res) => {
   const directoryPath = "uploads/";
+
   fs.readdir(directoryPath, (err, files) => {
     if (err) {
       return res.status(500).json({ message: "Unable to fetch files." });
     }
-    res.json({ files });
+
+    const fileUrls = files.map((file) => ({
+      name: file,
+      url: `${req.protocol}://${req.get("host")}/uploads/${file}`,
+    }));
+
+    res.json({ files: fileUrls });
   });
+});
+
+// 📥 Download File API
+app.get("/download/:filename", (req, res) => {
+  const filePath = path.join(__dirname, "uploads", req.params.filename);
+
+  if (fs.existsSync(filePath)) {
+    res.download(filePath);
+  } else {
+    res.status(404).json({ message: "File not found." });
+  }
 });
 
 // Start Server
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`✅ Server running at http://localhost:${PORT}`);
 });

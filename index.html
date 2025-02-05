@@ -1,92 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>File Upload & Fetch</title>
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-        padding: 20px;
-      }
-      .container {
-        max-width: 500px;
-        margin: 0 auto;
-      }
-      input,
-      button {
-        margin: 10px 0;
-        padding: 10px;
-        font-size: 16px;
-      }
-      #file-list {
-        margin-top: 20px;
-        text-align: left;
-      }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            background: white;
+            padding: 20px;
+            margin: 20px auto;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        input, button {
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #file-list {
+            margin-top: 20px;
+            text-align: left;
+            padding: 10px;
+            background: #fff;
+            border-radius: 5px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        li {
+            list-style: none;
+            padding: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+        }
+        li:last-child {
+            border-bottom: none;
+        }
+        .file-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .download-btn {
+            color: red;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .uploading {
+            font-size: 14px;
+            color: #777;
+        }
     </style>
-  </head>
-  <body>
+</head>
+<body>
     <div class="container">
-      <h1>Upload & Fetch Files</h1>
+        <h1>File Upload & Fetch</h1>
 
-      <!-- File Upload Form -->
-      <input type="file" id="fileInput" />
-      <button onclick="uploadFile()">Upload</button>
+        <!-- File Upload Form -->
+        <input type="file" id="fileInput">
+        <button onclick="uploadFile()">Upload</button>
+        <p id="uploadStatus" class="uploading"></p>
 
-      <h2>Uploaded Files</h2>
-      <button onclick="fetchFiles()">Refresh Files</button>
-      <ul id="file-list"></ul>
+        <h2>Uploaded Files</h2>
+        <button onclick="fetchFiles()">Refresh Files</button>
+        <ul id="file-list"></ul>
     </div>
 
     <script>
-      const serverURL = "https://file-hq0e.onrender.com";
+        const serverURL = "https://file-hq0e.onrender.com";
 
-      // Upload File Function
-      function uploadFile() {
-        const fileInput = document.getElementById("fileInput").files[0];
-        if (!fileInput) {
-          alert("Please select a file to upload.");
-          return;
+        // Upload File Function with Feedback
+        function uploadFile() {
+            const fileInput = document.getElementById("fileInput").files[0];
+            const uploadStatus = document.getElementById("uploadStatus");
+
+            if (!fileInput) {
+                alert("Please select a file to upload.");
+                return;
+            }
+
+            uploadStatus.textContent = "Uploading...";
+
+            const formData = new FormData();
+            formData.append("file", fileInput);
+
+            fetch(`${serverURL}/upload`, {
+                method: "POST",
+                body: formData,
+            })
+            .then((response) => response.json())
+            .then((data) => {
+                uploadStatus.textContent = data.message;
+                fetchFiles(); // Refresh file list after upload
+            })
+            .catch((error) => {
+                uploadStatus.textContent = "Upload failed. Try again.";
+                console.error("Error:", error);
+            });
         }
 
-        const formData = new FormData();
-        formData.append("file", fileInput);
+        // Fetch Uploaded Files
+        function fetchFiles() {
+            fetch(`${serverURL}/files`)
+                .then((response) => response.json())
+                .then((data) => {
+                    const fileList = document.getElementById("file-list");
+                    fileList.innerHTML = "";
 
-        fetch(`${serverURL}/upload`, {
-          method: "POST",
-          body: formData,
-        })
-          .then((response) => response.json())
-          .then((data) => {
-            alert(data.message);
-            fetchFiles(); // Refresh file list after upload
-          })
-          .catch((error) => console.error("Error:", error));
-      }
+                    data.files.forEach((file) => {
+                        const listItem = document.createElement("li");
+                        listItem.innerHTML = `
+                            <span>${file.name}</span>
+                            <div class="file-actions">
+                                <a href="${serverURL}/uploads/${file.name}" target="_blank">View</a>
+                                <a href="${serverURL}/download/${file.name}" class="download-btn" download>Download</a>
+                            </div>
+                        `;
+                        fileList.appendChild(listItem);
+                    });
+                })
+                .catch((error) => console.error("Error:", error));
+        }
 
-      // Fetch Uploaded Files
-      function fetchFiles() {
-        fetch(`${serverURL}/files`)
-          .then((response) => response.json())
-          .then((data) => {
-            const fileList = document.getElementById("file-list");
-            fileList.innerHTML = "";
-            data.files.forEach((file) => {
-              const listItem = document.createElement("li");
-              const link = document.createElement("a");
-              link.href = `${serverURL}/${file}`;
-              link.textContent = file;
-              link.target = "_blank";
-              listItem.appendChild(link);
-              fileList.appendChild(listItem);
-            });
-          })
-          .catch((error) => console.error("Error:", error));
-      }
-
-      // Load files on page load
-      fetchFiles();
+        // Load files on page load
+        fetchFiles();
     </script>
-  </body>
+</body>
 </html>
