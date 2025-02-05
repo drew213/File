@@ -11,19 +11,28 @@ const PORT = process.env.PORT || 5000;
 // ✅ Fix 1: Enable Full CORS Support
 app.use(
   cors({
-    origin: "*", // Allow all domains (or specify allowed domains)
+    origin: "*", // Allow all domains (or specify specific allowed domains)
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
   })
 );
 
-// ✅ Fix 2: Serve Static Files Properly
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-// Middleware for JSON Parsing
+// ✅ Middleware for JSON Parsing (Ensure it's before routes)
 app.use(express.json());
 
-// Set up Multer for file uploads
+// ✅ Fix 2: Serve Static Files Properly
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"), {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith(".json")) {
+        res.setHeader("Content-Type", "application/json");
+      }
+    },
+  })
+);
+
+// ✅ Set up Multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadPath = "uploads/";
@@ -49,7 +58,7 @@ app.post("/upload", upload.single("file"), (req, res) => {
     req.file.filename
   }`;
 
-  console.log("File uploaded:", req.file.filename); // Debugging log
+  console.log("✅ File uploaded:", req.file.filename); // Debugging log
 
   res.json({
     message: "File uploaded successfully!",
@@ -86,7 +95,7 @@ app.get("/download/:filename", (req, res) => {
   }
 });
 
-// Start Server
+// ✅ Start Server
 app.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
 });
