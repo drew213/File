@@ -1,91 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>File Upload & Fetch</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
-        }
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-        }
-        input, button {
-            margin: 10px 0;
-            padding: 10px;
-            font-size: 16px;
-        }
-        #file-list {
-            margin-top: 20px;
-            text-align: left;
-        }
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding: 20px;
+      }
+      .container {
+        max-width: 500px;
+        margin: 0 auto;
+      }
+      input,
+      button {
+        margin: 10px 0;
+        padding: 10px;
+        font-size: 16px;
+      }
+      #file-list {
+        margin-top: 20px;
+        text-align: left;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <h1>Upload & Fetch Files</h1>
-        
-        <!-- File Upload Form -->
-        <input type="file" id="fileInput">
-        <button onclick="uploadFile()">Upload</button>
+      <h1>Upload & Fetch Files</h1>
 
-        <h2>Uploaded Files</h2>
-        <button onclick="fetchFiles()">Refresh Files</button>
-        <ul id="file-list"></ul>
+      <!-- File Upload Form -->
+      <input type="file" id="fileInput" />
+      <button onclick="uploadFile()">Upload</button>
+
+      <h2>Uploaded Files</h2>
+      <button onclick="fetchFiles()">Refresh Files</button>
+      <ul id="file-list"></ul>
     </div>
 
     <script>
-        const serverURL = "http://localhost:5000";
+      const serverURL = "https://file-hq0e.onrender.com";
 
-        // Upload File Function
-        function uploadFile() {
-            const fileInput = document.getElementById("fileInput").files[0];
-            if (!fileInput) {
-                alert("Please select a file to upload.");
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append("file", fileInput);
-
-            fetch(`${serverURL}/upload`, {
-                method: "POST",
-                body: formData,
-            })
-            .then(response => response.json())
-            .then(data => {
-                alert(data.message);
-                fetchFiles(); // Refresh file list after upload
-            })
-            .catch(error => console.error("Error:", error));
+      // Upload File Function
+      function uploadFile() {
+        const fileInput = document.getElementById("fileInput").files[0];
+        if (!fileInput) {
+          alert("Please select a file to upload.");
+          return;
         }
 
-        // Fetch Uploaded Files
-        function fetchFiles() {
-            fetch(`${serverURL}/files`)
-                .then(response => response.json())
-                .then(data => {
-                    const fileList = document.getElementById("file-list");
-                    fileList.innerHTML = "";
-                    data.files.forEach(file => {
-                        const listItem = document.createElement("li");
-                        const link = document.createElement("a");
-                        link.href = `${serverURL}/${file}`;
-                        link.textContent = file;
-                        link.target = "_blank";
-                        listItem.appendChild(link);
-                        fileList.appendChild(listItem);
-                    });
-                })
-                .catch(error => console.error("Error:", error));
-        }
+        const formData = new FormData();
+        formData.append("file", fileInput);
 
-        // Load files on page load
-        fetchFiles();
+        fetch(`${serverURL}/upload`, {
+          method: "POST",
+          body: formData,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            alert(data.message);
+            fetchFiles(); // Refresh file list after upload
+          })
+          .catch((error) => console.error("Error:", error));
+      }
+
+      // Fetch Uploaded Files
+      function fetchFiles() {
+        fetch(`${serverURL}/files`)
+          .then((response) => response.json())
+          .then((data) => {
+            const fileList = document.getElementById("file-list");
+            fileList.innerHTML = "";
+            data.files.forEach((file) => {
+              const listItem = document.createElement("li");
+              const link = document.createElement("a");
+              link.href = `${serverURL}/${file}`;
+              link.textContent = file;
+              link.target = "_blank";
+              listItem.appendChild(link);
+              fileList.appendChild(listItem);
+            });
+          })
+          .catch((error) => console.error("Error:", error));
+      }
+
+      // Load files on page load
+      fetchFiles();
     </script>
-</body>
+  </body>
 </html>
